@@ -1,0 +1,67 @@
+@PACKAGE_INIT@
+
+if (NOT common_template_FIND_COMPONENTS)
+    set(common_template_NOT_FOUND_MESSAGE "The common_template package requires at least one component")
+    set(common_template_FOUND False)
+    return()
+endif()
+
+# 需要使用find_dependency命令时引入
+include(CMakeFindDependencyMacro)
+# 工程CMakeLists文件中可以动态设置该值，最终会被替换到当前文件中，通常用来实现查找依赖的CMake模块。
+@common_template_CMAKE_CONFIG_DEPS@
+
+message(DEBUG "common_template_FIND_COMPONENTS: ${common_template_FIND_COMPONENTS}")
+message(DEBUG "common_template_FIND_REQUIRED: ${common_template_FIND_REQUIRED}")
+
+get_filename_component(_common_template_install_prefix "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
+
+message(DEBUG "_common_template_install_prefix: ${_common_template_install_prefix}")
+
+# 临时覆盖CMAKE_PREFIX_PATH，以便让子组件能找到彼此。
+# 子组件都在当前${CMAKE_CURRENT_LIST_DIR}下，不要再去默认路径和其他运行时路径寻找
+set(common_template_CMAKE_PREFIX_PATH_old ${CMAKE_PREFIX_PATH})
+set(CMAKE_PREFIX_PATH ${_common_template_install_prefix})
+
+# 任意组件未找到时的错误信息
+set(_common_template_NOTFOUND_MESSAGE)
+
+set(_common_template_FIND_PARTS_REQUIRED)
+if (common_template_FIND_REQUIRED)
+    set(_common_template_FIND_PARTS_REQUIRED REQUIRED)
+endif()
+set(_common_template_FIND_PARTS_QUIET)
+if (common_template_FIND_QUIETLY)
+    set(_common_template_FIND_PARTS_QUIET QUIET)
+endif()
+
+message(DEBUG "common_template_FIND_QUIET: ${common_template_FIND_QUIET}")
+message(DEBUG "common_template_FIND_REQUIRED: ${common_template_FIND_REQUIRED}")
+message(DEBUG "_common_template_FIND_PARTS_QUIET: ${_common_template_FIND_PARTS_QUIET}")
+message(DEBUG "_common_template_FIND_PARTS_REQUIRED: ${_common_template_FIND_PARTS_REQUIRED}")
+
+foreach(module ${common_template_FIND_COMPONENTS})
+    find_package(common_template${module}
+        ${_common_template_FIND_PARTS_QUIET}
+        ${_common_template_FIND_PARTS_REQUIRED}
+        PATHS "${_common_template_install_prefix}" NO_DEFAULT_PATH
+    )
+    if (NOT common_template${module}_FOUND)
+        if (common_template_FIND_REQUIRED_${module})
+            set(_common_template_NOTFOUND_MESSAGE "${_common_template_NOTFOUND_MESSAGE}Failed to find common_template component \"${module}\" config file at \"${_common_template_install_prefix}/common_template${module}/common_template${module}Config.cmake\"\n")
+        elseif(NOT common_template_FIND_QUIETLY)
+            message(WARNING "Failed to find common_template component \"${module}\" config file at \"${_common_template_install_prefix}/common_template${module}/common_template${module}Config.cmake\"")
+        endif()
+    endif()
+
+    # For backward compatibility set the LIBRARIES variable
+    list(APPEND common_template_LIBRARIES "common_template::${module}")
+endforeach()
+
+# 组件查找结束后还原CMAKE_PREFIX_PATH
+set(CMAKE_PREFIX_PATH ${common_template_CMAKE_PREFIX_PATH_old})
+
+if (_common_template_NOTFOUND_MESSAGE)
+    set(common_template_NOT_FOUND_MESSAGE "${_common_template_NOTFOUND_MESSAGE}")
+    set(common_template_FOUND False)
+endif()
