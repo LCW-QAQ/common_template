@@ -8,6 +8,8 @@
 #include <json/json.h>
 #include <range/v3/range.hpp>
 #include <range/v3/view.hpp>
+#include <rttr/registration>
+#include <rttr/type>
 #include <soci/odbc/soci-odbc.h>
 #include <soci/soci.h>
 #include <sqlext.h>
@@ -161,4 +163,37 @@ void soci_test() {
       std::cout << "There is no real_name for " << name << '\n';
     }
   }
+}
+
+class Person {
+public:
+  std::string name{"Default"};
+  uint8_t age{0};
+
+  void say() {
+    std::cout << "my name is: " << name << ", age: " << age << "\n";
+  }
+};
+
+RTTR_REGISTRATION {
+  rttr::registration::class_<Person>("Person")
+      .constructor<>()
+      .property("name", &Person::name)
+      .property("age", &Person::age);
+  // .method("say", &Person::say);
+
+  rttr::registration::class_<Person>("Person").method("say", &Person::say);
+}
+
+void rttr_test() {
+  Person p{"city", 10};
+  auto type = rttr::type::get<Person>();
+  auto properties = type.get_properties();
+  for (auto &&prop : properties) {
+    std::cout << "name: " << prop.get_name()
+              << ", value: " << prop.get_value(p).to_string() << std::endl;
+  }
+  type.get_method("say").invoke(p);
+  type.create({}).convert<Person>().say();
+  type.get_constructor().invoke().convert<Person>().say();
 }

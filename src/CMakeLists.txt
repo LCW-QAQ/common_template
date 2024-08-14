@@ -18,6 +18,7 @@ find_package(cpr REQUIRED)
 # extension lib:
 # find_package(odbc REQUIRED)
 find_package(SOCI REQUIRED COMPOENTS sock_odbc_static)
+find_package(RTTR REQUIRED)
 
 # other lib:
 find_package(cppzmq REQUIRED)
@@ -56,6 +57,8 @@ target_link_libraries(
   # Folly
 
   # other lib:
+  # RTTR
+  RTTR::Core_Lib
   # zeromq
   cppzmq
   # sqlite3

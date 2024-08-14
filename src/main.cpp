@@ -12,8 +12,9 @@ int main(int arc, char **argv) {
   cpr_test();
   simple_boost_test();
   zmq_test();
-  odbc_test();
-  soci_test();
+  // odbc_test();
+  // soci_test();
+  rttr_test();
 
   return 0;
 }
