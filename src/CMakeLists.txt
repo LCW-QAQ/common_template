@@ -58,7 +58,7 @@ target_link_libraries(
 
   # other lib:
   # RTTR
-  RTTR::Core_Lib
+  RTTR::Core
   # zeromq
   cppzmq
   # sqlite3

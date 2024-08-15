@@ -168,7 +168,7 @@ void soci_test() {
 class Person {
 public:
   std::string name{"Default"};
-  uint8_t age{0};
+  uint32_t age{0};
 
   void say() {
     std::cout << "my name is: " << name << ", age: " << age << "\n";
