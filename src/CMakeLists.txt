@@ -1,5 +1,11 @@
 aux_source_directory(. SRC_FILES)
 
+# Enable Qt
+list(APPEND CMAKE_PREFIX_PATH "e:/software/Qt/Qt5.12.7/5.12.7/mingw73_64")
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
 add_executable(${PROJECT_NAME}_main ${SRC_FILES})
 set_target_properties(
   ${PROJECT_NAME}_main PROPERTIES
@@ -18,10 +24,11 @@ find_package(cpr REQUIRED)
 # extension lib:
 # find_package(odbc REQUIRED)
 find_package(SOCI REQUIRED COMPOENTS sock_odbc_static)
-find_package(RTTR REQUIRED)
+find_package(Qt5 COMPONENTS Core Sql REQUIRED)
 
 # other lib:
 find_package(cppzmq REQUIRED)
+find_package(RTTR REQUIRED)
 
 target_include_directories(
   ${PROJECT_NAME}_main PRIVATE 
@@ -36,7 +43,7 @@ target_link_libraries(
 
   # require lib:
   # TBB
-  TBB::tbb
+  # TBB::tbb
   # jsoncpp
   jsoncpp_static
   # range-v3 header only
@@ -47,6 +54,8 @@ target_link_libraries(
 
   # extension lib:
   # * Qt
+  Qt5::Core
+  Qt5::Sql
   # * POCO
   # * Unix ODBC
   # libodbc # msys2中安装unixodbc，链接libodc库，支持在msys2环境中运行

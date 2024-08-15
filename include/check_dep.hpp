@@ -1,5 +1,11 @@
 #pragma once
 
+#include <QCoreApplication>
+#include <QDebug>
+#include <QSql>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <bits/stdc++.h>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
@@ -13,7 +19,7 @@
 #include <soci/odbc/soci-odbc.h>
 #include <soci/soci.h>
 #include <sqlext.h>
-#include <tbb/tbb.h>
+// #include <tbb/tbb.h>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
 
@@ -32,8 +38,8 @@ SQLINTEGER value = 100;
 SQLINTEGER V_OD_erg;
 
 void tbb_test() {
-  tbb::concurrent_queue<int> q;
-  q.emplace(0);
+  // tbb::concurrent_queue<int> q;
+  // q.emplace(0);
 }
 
 void json_cpp_test() {
@@ -196,4 +202,35 @@ void rttr_test() {
   type.get_method("say").invoke(p);
   type.create({}).convert<Person>().say();
   type.get_constructor().invoke().convert<Person>().say();
+}
+
+void qt_test() {
+  int argc = 0;
+  QCoreApplication app(argc, nullptr);
+
+  qDebug() << QSqlDatabase::drivers();
+
+  auto db = QSqlDatabase::addDatabase("QPSQL");
+  db.setHostName("127.0.0.1");
+  db.setPort(6000);
+  db.setUserName("postgres");
+  db.setPassword("123456");
+  db.setDatabaseName("kunshan_new");
+
+  if (!db.open()) {
+    qDebug() << "db connection failed!" << db.lastError();
+    app.exit(-1);
+    return;
+  }
+
+  // QSqlQuery q(db);
+  // q.prepare("select count(*) as cnt from sys_web_user") ;
+  // auto res = q.exec();
+  // if (!res) {
+  //   qDebug() << "create table error" << q.lastError() << "\n";
+  //   return;
+  // }
+  // q.next();
+  // qDebug() << "count: " << q.value(0).toInt();
+  app.exit();
 }

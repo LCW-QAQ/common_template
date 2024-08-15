@@ -15,6 +15,7 @@ int main(int arc, char **argv) {
   // odbc_test();
   // soci_test();
   rttr_test();
+  qt_test();
 
   return 0;
 }
