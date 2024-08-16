@@ -1,11 +1,11 @@
 #pragma once
 
-#include <QCoreApplication>
-#include <QDebug>
-#include <QSql>
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QSqlQuery>
+// #include <QCoreApplication>
+// #include <QDebug>
+// #include <QSql>
+// #include <QSqlDatabase>
+// #include <QSqlError>
+// #include <QSqlQuery>
 #include <bits/stdc++.h>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
@@ -20,8 +20,10 @@
 #include <soci/soci.h>
 #include <sqlext.h>
 // #include <tbb/tbb.h>
+#include <sonic/sonic.h>
 #include <yaml-cpp/yaml.h>
 #include <zmq.hpp>
+
 
 using namespace std::literals;
 
@@ -205,23 +207,23 @@ void rttr_test() {
 }
 
 void qt_test() {
-  int argc = 0;
-  QCoreApplication app(argc, nullptr);
+  // int argc = 0;
+  // QCoreApplication app(argc, nullptr);
 
-  qDebug() << QSqlDatabase::drivers();
+  // qDebug() << QSqlDatabase::drivers();
 
-  auto db = QSqlDatabase::addDatabase("QPSQL");
-  db.setHostName("127.0.0.1");
-  db.setPort(6000);
-  db.setUserName("postgres");
-  db.setPassword("123456");
-  db.setDatabaseName("kunshan_new");
+  // auto db = QSqlDatabase::addDatabase("QPSQL");
+  // db.setHostName("127.0.0.1");
+  // db.setPort(6000);
+  // db.setUserName("postgres");
+  // db.setPassword("123456");
+  // db.setDatabaseName("kunshan_new");
 
-  if (!db.open()) {
-    qDebug() << "db connection failed!" << db.lastError();
-    app.exit(-1);
-    return;
-  }
+  // if (!db.open()) {
+  //   qDebug() << "db connection failed!" << db.lastError();
+  //   app.exit(-1);
+  //   return;
+  // }
 
   // QSqlQuery q(db);
   // q.prepare("select count(*) as cnt from sys_web_user") ;
@@ -232,5 +234,17 @@ void qt_test() {
   // }
   // q.next();
   // qDebug() << "count: " << q.value(0).toInt();
-  app.exit();
+  // app.exit();
+}
+
+void sonic_test() {
+  sonic_json::Document doc;
+  doc.Parse(R"(
+  {
+    "name": "zs",
+    "age": 10
+  }
+  )");
+  std::cout << "name: " << doc.FindMember("name")->value.GetStringView()
+            << "\n";
 }

@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <check_dep.hpp>
 #include <Core/mylib.h>
+#include <sonic/sonic.h>
 
 int main(int arc, char **argv) {
 
@@ -16,6 +17,7 @@ int main(int arc, char **argv) {
   // soci_test();
   rttr_test();
   qt_test();
+  sonic_test();
 
   return 0;
 }
