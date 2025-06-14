@@ -1,6 +1,7 @@
 aux_source_directory(src SRC_FILES)
 
 add_library(Core ${SRC_FILES})
+# 指定别名，以支持其他程序通过Namespace::Module的形式引入
 add_library(${PROJECT_NAME}::Core ALIAS Core)
 set_target_properties(Core
 	PROPERTIES
@@ -14,8 +15,9 @@ target_include_directories(Core
 PUBLIC
     # 在构建时引入的头文件目录
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    # 安装时引入的头文件目录
-    $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
+    
+    # 安装时引入的头文件目录，与CMKMOD_INSTALL宏中INSTALL函数指定的头文件路径同时生效，通常为${CMAKE_INSTALL_PREFIX}/include即可
+    # $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

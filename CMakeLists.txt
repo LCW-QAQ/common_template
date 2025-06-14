@@ -22,10 +22,10 @@ if(MY_ENABLE_LIB)
   # 在linux上CMAKE_INSTALL_PREFIX=，windows上则为C:/Program Files (x86)/${PROJECT_NAME}或C:/Program Files/${PROJECT_NAME}
   include(GNUInstallDirs)
 
-  # 引入用于生成CMake Config文件命令
+  # 引入用于生成CMake Config文件的命令
   include(CMakePackageConfigHelpers)
 
-  # 生成项目的config文件，供第三方应用引入
+  # 生成项目的config文件，供第三方应用引入，用于支持find_package(SOME_LIB 5.12.7 EXACT REQUIRED)这种指定明确版本的语法
   # 在${PROJECT_NAME}Config.cmake.in中，编写查找项目其他子组件的逻辑
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in

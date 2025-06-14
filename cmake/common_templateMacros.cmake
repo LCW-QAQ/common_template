@@ -4,7 +4,7 @@ macro(CMKMOD_INSTALL target_name)
     install(
       # 最后带/表示仅拷贝目录下的内容，否则会将整个目录拷贝
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
     )
 
     # 库与二进制文件的安装路径
