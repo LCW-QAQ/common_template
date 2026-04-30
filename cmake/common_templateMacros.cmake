@@ -1,55 +1,63 @@
-# 用户安装头文件、库文件的安装路径配置
-macro(CMKMOD_INSTALL target_name)    
-    # 头文件目录安装路径
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 可复用的 install / package 宏
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 使用方式：子模块 CMakeLists.txt 中调用
+#   CMKMOD_INSTALL(<target_name>)         — 安装头文件 + 目标产物
+#   CMKMOD_GENERATE_PACKAGE(<target_name>) — 生成 Config/ConfigVersion/Targets
+#
+# 之所以用 macro 而非 function：宏不创建新的变量作用域，
+# ${CMAKE_CURRENT_SOURCE_DIR}、${PROJECT_NAME} 等变量直接引用调用者的值
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# 安装头文件 + 目标产物（库文件/可执行文件）
+macro(CMKMOD_INSTALL target_name)
+    # ── 安装头文件 ──
+    # 末尾的 / 很关键：表示仅拷贝 include/ 目录下的内容，而非 include 目录本身
+    # 例如 include/sonic/allocator.h → 安装到 <prefix>/include/common_template/sonic/allocator.h
     install(
-      # 最后带/表示仅拷贝目录下的内容，否则会将整个目录拷贝
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/
       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
     )
 
-    # 库与二进制文件的安装路径
+    # ── 安装目标产物 + 导出信息 ──
     install(
       TARGETS ${target_name}
-      # 指定导出对象名称（不是Targets文件名称，可以当作Targets文件的唯一标识）
+      # EXPORT 名称是导出集的唯一标识，不是文件名
+      # 后续 CMKMOD_GENERATE_PACKAGE 中的 install(EXPORT ...) 会引用这个名称
       EXPORT "${target_name}Targets"
-      # 动态库安装路径
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      # 静态库安装路径
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-      # 可执行文件安装路径
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-      # 打包号的app文件路径
       BUNDLE DESTINATION ${CMAKE_INSTALL_BINDIR}
-      # 头文件路径
+      # INCLUDES DESTINATION 的作用：为导出目标设置 INTERFACE_INCLUDE_DIRECTORIES 属性
+      # 消费端 find_package 后链接该目标时，会自动获得此路径作为头文件搜索路径
+      # 注意：这仅影响安装后的消费端，构建树内的头文件路径需要由 target_include_directories 提供
       INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-      # INTERFACE库头文件路径
       FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endmacro()
 
+# 生成并安装 Config / ConfigVersion / Targets 文件
 macro(CMKMOD_GENERATE_PACKAGE target_name)
-    # 导出版本文件
+    # 版本文件：让消费端支持 find_package(ProjectName 0.1.0 REQUIRED) 版本语法
     write_basic_package_version_file(
       "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}${target_name}ConfigVersion.cmake"
       VERSION ${PROJECT_VERSION}
       COMPATIBILITY AnyNewerVersion
     )
-    # 生成Config文件
+
+    # 从模块的 cmake/ 子目录拷贝 Config 文件
+    # @ONLY 表示只替换 @var@ 形式的变量，不替换 ${var} 形式
+    # 避免将 CMake 语法变量（如 ${CMAKE_CURRENT_LIST_DIR}）意外展开
     configure_file(
       "${CMAKE_CURRENT_LIST_DIR}/cmake/${PROJECT_NAME}${target_name}Config.cmake"
       "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}${target_name}Config.cmake"
-      # @COPYONLY 仅拷贝文件，不替换文件内部任何变量
-      @ONLY # 替换输入文件内部@var_name@变量，不替换${var_name}变量
+      @ONLY
     )
-    # 下面的命令也可以生成Config文件，同时指定Config文件安装时的路径
-    # 注意该命令第一个参数不能为空，即必须指定模板文件，当不需要使用模板文件时，请使用configure_file命令
-    # configure_package_config_file(
-    #     ${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}CoreConfig.cmake.in
-    #     ${PROJECT_NAME}CoreConfig.cmake
-    #     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    # )
-    
-    # 指定Targets文件的安装路径
+
+    # 导出 Targets 文件：包含目标的所有编译/链接属性
+    # NAMESPACE 使得消费端通过 common_template::Core 形式引用目标
     install(
       EXPORT "${target_name}Targets"
       FILE "${PROJECT_NAME}${target_name}Targets.cmake"
@@ -57,7 +65,7 @@ macro(CMKMOD_GENERATE_PACKAGE target_name)
       DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
     )
 
-    # 指定Config文件安装路径
+    # 安装子模块的 Config + ConfigVersion 文件
     install(
       FILES
         "${CMAKE_BINARY_DIR}/${PROJECT_NAME}/${PROJECT_NAME}${target_name}Config.cmake"

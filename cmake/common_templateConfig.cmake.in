@@ -1,5 +1,23 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 顶层 Config 文件模板
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 此文件是 find_package(common_template COMPONENTS Core Sonic) 的入口
+# 由顶层 CMakeLists.txt 中 configure_package_config_file() 从本模板生成
+#
+# 设计思路：
+#   顶层 Config 只负责"分发"——根据用户请求的 COMPONENTS，
+#   在同一安装目录下查找对应子模块的 Config 文件
+#   每个子模块的 Config 再加载各自的 Targets 文件
+#
+# 变量说明：
+#   @PACKAGE_INIT@           — 由 configure_package_config_file 注入的初始化代码
+#   common_template_FIND_*   — 由 find_package 自动设置的变量
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 @PACKAGE_INIT@
 
+# 必须至少指定一个 COMPONENT，否则无法确定加载哪些子模块
 if (NOT common_template_FIND_COMPONENTS)
     set(common_template_NOT_FOUND_MESSAGE "The common_template package requires at least one component")
     set(common_template_FOUND False)
@@ -14,18 +32,21 @@ include(CMakeFindDependencyMacro)
 message(DEBUG "common_template_FIND_COMPONENTS: ${common_template_FIND_COMPONENTS}")
 message(DEBUG "common_template_FIND_REQUIRED: ${common_template_FIND_REQUIRED}")
 
+# CMAKE_CURRENT_LIST_DIR 在已安装的 Config 中指向 <prefix>/lib/cmake/common_template/
 get_filename_component(_common_template_install_prefix "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
 
 message(DEBUG "_common_template_install_prefix: ${_common_template_install_prefix}")
 
-# 临时覆盖CMAKE_PREFIX_PATH，以便让子组件能找到彼此。
-# 子组件都在当前${CMAKE_CURRENT_LIST_DIR}下，不要再去默认路径和其他运行时路径寻找
+# ── 临时覆盖 CMAKE_PREFIX_PATH ──
+# 目的：让 find_package 查找子模块时只在当前安装目录内搜索
+# 避免去系统默认路径或其他运行时路径搜索，确保加载的是同版本、同安装前缀的子模块
 set(common_template_CMAKE_PREFIX_PATH_old ${CMAKE_PREFIX_PATH})
 set(CMAKE_PREFIX_PATH ${_common_template_install_prefix})
 
 # 任意组件未找到时的错误信息
 set(_common_template_NOTFOUND_MESSAGE)
 
+# 透传 REQUIRED / QUIET 给子模块的 find_package
 set(_common_template_FIND_PARTS_REQUIRED)
 if (common_template_FIND_REQUIRED)
     set(_common_template_FIND_PARTS_REQUIRED REQUIRED)
@@ -40,6 +61,9 @@ message(DEBUG "common_template_FIND_REQUIRED: ${common_template_FIND_REQUIRED}")
 message(DEBUG "_common_template_FIND_PARTS_QUIET: ${_common_template_FIND_PARTS_QUIET}")
 message(DEBUG "_common_template_FIND_PARTS_REQUIRED: ${_common_template_FIND_PARTS_REQUIRED}")
 
+# ── 遍历查找每个请求的子模块 ──
+# find_package(common_templateCore) 会加载 common_templateCoreConfig.cmake
+# 该 Config 内部 include 对应的 Targets 文件，从而注册 common_template::Core 目标
 foreach(module ${common_template_FIND_COMPONENTS})
     find_package(common_template${module}
         ${_common_template_FIND_PARTS_QUIET}
@@ -58,7 +82,7 @@ foreach(module ${common_template_FIND_COMPONENTS})
     list(APPEND common_template_LIBRARIES "common_template::${module}")
 endforeach()
 
-# 组件查找结束后还原CMAKE_PREFIX_PATH
+# 还原 CMAKE_PREFIX_PATH，避免影响后续其他 find_package 调用
 set(CMAKE_PREFIX_PATH ${common_template_CMAKE_PREFIX_PATH_old})
 
 if (_common_template_NOTFOUND_MESSAGE)

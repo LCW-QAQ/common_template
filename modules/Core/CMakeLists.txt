@@ -1,29 +1,61 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 编译型子模块：Core
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# 安装后消费端使用方式：
+#   find_package(common_template REQUIRED COMPONENTS Core)
+#   target_link_libraries(myApp PRIVATE common_template::Core)
+#
+# 一条 target_link_libraries 自动获得：
+#   - 头文件路径（通过 target_include_directories 的 BUILD_INTERFACE / INSTALL_INTERFACE）
+#   - 链接库文件（libcommon_templateCore.a / .so）
+#   - 传递依赖（如果 Core 声明了 PUBLIC 依赖的话）
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 aux_source_directory(src SRC_FILES)
 
 add_library(Core ${SRC_FILES})
-# 指定别名，以支持其他程序通过Namespace::Module的形式引入
+
+# ALIAS 使得消费端可以通过 common_template::Core 引用此目标
+# ALIAS 在构建树内和安装后都有效，是 Modern CMake 的标准实践
 add_library(${PROJECT_NAME}::Core ALIAS Core)
+
 set_target_properties(Core
 	PROPERTIES
 	VERSION ${SHARED_LIBRARY_VERSION} SOVERSION ${SHARED_LIBRARY_VERSION}
-    # 修改库名称
+    # 输出文件名为 libcommon_templateCore.a / .so，避免与其他库命名冲突
 	OUTPUT_NAME ${PROJECT_NAME}Core
+	# 导出宏：编译时自动定义 Core_EXPORTS，用于 __declspec(dllexport) 等场景
 	DEFINE_SYMBOL Core_EXPORTS
 )
 
+# ── 头文件路径（构建树 vs 安装树）──
+#
+# 必须使用生成器表达式区分两个阶段：
+#   BUILD_INTERFACE  — 构建树内使用（指向源码目录）
+#   INSTALL_INTERFACE — 安装后使用（指向安装前缀下的路径）
+#
+# 如果不使用生成器表达式，install(EXPORT ...) 时会报错：
+#   Target "Core" INTERFACE_INCLUDE_DIRECTORIES property contains path "...".
+# 原因：install(EXPORT) 生成的 Targets 文件中会包含构建机器上的绝对路径，
+# 而该路径在消费端机器上不存在
 target_include_directories(Core
 PUBLIC
-    # 在构建时引入的头文件目录
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    
-    # 安装时引入的头文件目录，与CMKMOD_INSTALL宏中INSTALL函数指定的头文件路径同时生效，通常为${CMAKE_INSTALL_PREFIX}/include即可
+    # INSTALL_INTERFACE 已由 CMKMOD_INSTALL 中 install(TARGETS ... INCLUDES DESTINATION ...) 提供
+    # 如需更精确的安装路径可取消注释：
     # $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+# 两行完成安装 + 导出（宏定义在 cmake/common_templateMacros.cmake）
 CMKMOD_INSTALL(Core)
 CMKMOD_GENERATE_PACKAGE(Core)
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 以下为旧版参考写法（已废弃，保留供参考）
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 # set(MY_LIB_NAME Core)
 
@@ -44,7 +76,7 @@ CMKMOD_GENERATE_PACKAGE(Core)
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>
 #   # 安装时引入的头文件目录
 #   $<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}>
-# #   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>
+# #   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}}>
 # )
 
 # message(STATUS "--------------------------------------")
